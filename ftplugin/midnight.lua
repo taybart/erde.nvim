@@ -5,9 +5,9 @@ vim.bo.commentstring = '-- %s'
 vim.bo.comments = ':---,:--'
 
 -- `gf` on require('src/layout')
-vim.bo.suffixesadd = '.erde,.lua'
+vim.bo.suffixesadd = '.mn,.midnight,.lua'
 vim.bo.include = [=[\v<require\s*\(?\s*['"]\zs[^'"]+\ze['"]]=]
-vim.bo.includeexpr = "v:lua.require'erde'.includeexpr(v:fname)"
+vim.bo.includeexpr = "v:lua.require'midnight'.includeexpr(v:fname)"
 
 -- highlighting, if the parser is installed
 pcall(vim.treesitter.start)

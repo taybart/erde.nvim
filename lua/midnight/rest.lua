@@ -1,4 +1,4 @@
--- erde in rest (https://github.com/taybart/rest): lints `<<ERDE` heredocs in
+-- midnight in rest (https://github.com/taybart/rest): lints `<<MN` / `<<MIDNIGHT` heredocs in
 -- .rest files, and knows the globals rest gives scripts (and pages)
 local M = {}
 
@@ -8,10 +8,10 @@ M.globals = {
   'uuid', 'ulid', 'nanoid', 'tools', 'copy', 'fail', 'cli', 'input', 'expired_token',
 }
 
-M.ns = vim.api.nvim_create_namespace('erde.rest')
+M.ns = vim.api.nvim_create_namespace('midnight.rest')
 M.runs = {} ---@type table<integer, integer>
 
---- the erde heredocs in a rest buffer: { first = 0-based row of the first
+--- the midnight heredocs in a rest buffer: { first = 0-based row of the first
 --- line of code, lines = { ... } }
 ---@param buf integer
 function M.heredocs(buf)
@@ -30,8 +30,8 @@ function M.heredocs(buf)
       if name == 'doc' then doc = nodes[1] end
       if name == 'id' then id = nodes[#nodes] end
     end
-    -- (matches each identifier: `<<ERDE` / `<<-ERDE` and the closing one)
-    if doc and id and not seen[doc:id()] and vim.treesitter.get_node_text(id, buf):upper() == 'ERDE' then
+    -- (matches each identifier: `<<MN` / `<<-MIDNIGHT`, etc. and the closing one)
+    if doc and id and not seen[doc:id()] and vim.list_contains({ 'MN', 'MIDNIGHT' }, vim.treesitter.get_node_text(id, buf):upper()) then
       seen[doc:id()] = true
       local start_row, _, end_row = doc:range()
       docs[#docs + 1] = {
@@ -43,7 +43,7 @@ function M.heredocs(buf)
   return docs
 end
 
---- is (0-based) row code in an erde heredoc?
+--- is (0-based) row code in a midnight heredoc?
 ---@param buf integer
 ---@param row integer
 function M.in_heredoc(buf, row)
@@ -53,13 +53,13 @@ function M.in_heredoc(buf, row)
   return false
 end
 
---- runs `erde lint` on each erde heredoc in a rest buffer
+--- runs `midnight lint` on each midnight heredoc in a rest buffer
 ---@param buf? integer
 function M.lint(buf)
   buf = buf or vim.api.nvim_get_current_buf()
-  local erde = require('erde')
-  local args = vim.list_extend({ erde.config.cmd, 'lint' }, erde.ext_args())
-  local globals = vim.list_extend(vim.deepcopy(M.globals), erde.config.globals)
+  local midnight = require('midnight')
+  local args = vim.list_extend({ midnight.config.cmd, 'lint' }, midnight.ext_args())
+  local globals = vim.list_extend(vim.deepcopy(M.globals), midnight.config.globals)
   vim.list_extend(args, { '-g', table.concat(globals, ','), '-' })
 
   local docs = M.heredocs(buf)
@@ -71,7 +71,7 @@ function M.lint(buf)
 
   for _, doc in ipairs(docs) do
     vim.system(args, { stdin = table.concat(doc.lines, '\n'), text = true }, vim.schedule_wrap(function(res)
-      for _, d in ipairs(erde.parse_lint(res.stdout or '')) do
+      for _, d in ipairs(midnight.parse_lint(res.stdout or '')) do
         d.lnum = d.lnum + doc.first
         diagnostics[#diagnostics + 1] = d
       end
@@ -85,7 +85,7 @@ end
 
 --- lints rest buffers' heredocs on read, write, and leaving insert mode
 function M.setup()
-  local group = vim.api.nvim_create_augroup('erde.rest', { clear = true })
+  local group = vim.api.nvim_create_augroup('midnight.rest', { clear = true })
   vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufWritePost', 'InsertLeave' }, {
     group = group,
     pattern = '*.rest',

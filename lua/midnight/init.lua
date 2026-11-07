@@ -1,64 +1,64 @@
 local M = {}
 
----@class erde.Config
+---@class midnight.Config
 M.config = {
-  -- the go-erde cli (`go install github.com/taybart/go-erde/cmd/erde@latest`)
-  cmd = 'erde',
+  -- the midnight cli (`go install github.com/taybart/midnight/cmd/midnight@latest`)
+  cmd = 'midnight',
   -- experimental extensions passed as `-X` to fmt, lint, and compile
   extensions = { 'match', 'markup' },
-  -- extra globals for `erde lint -g` (ex. ones set by the host: rest, kv, json, ...)
-  -- buffers can add more w/ `vim.b.erde_globals`
+  -- extra globals for `midnight lint -g` (ex. ones set by the host: rest, kv, json, ...)
+  -- buffers can add more w/ `vim.b.midnight_globals`
   globals = {},
   -- register the tree-sitter parser w/ nvim-treesitter (main branch)
   -- set `path` to use a local checkout of the grammar instead of `url`
   treesitter = {
-    url = 'https://github.com/taybart/tree-sitter-erde',
+    url = 'https://github.com/taybart/tree-sitter-midnight',
     path = nil,
   },
-  -- register the `erde_fmt` formatter w/ conform.nvim (if it's installed)
+  -- register the `midnight_fmt` formatter w/ conform.nvim (if it's installed)
   conform = true,
-  -- register the `erde` linter w/ nvim-lint (if it's installed)
+  -- register the `midnight` linter w/ nvim-lint (if it's installed)
   lint = true,
-  -- `gc` comments markup children w/ `{--[[ ]]}` (see lua/erde/comment.lua)
+  -- `gc` comments markup children w/ `{--[[ ]]}` (see lua/midnight/comment.lua)
   comments = true,
-  -- rest (https://github.com/taybart/rest): lint `<<ERDE` heredocs in .rest
-  -- files, and know rest's globals in .erde files of projects w/ a .rest file
+  -- rest (https://github.com/taybart/rest): lint `<<MIDNIGHT` heredocs in .rest
+  -- files, and know rest's globals in .mn files of projects w/ a .rest file
   rest = true,
 }
 
----@param opts? erde.Config
+---@param opts? midnight.Config
 function M.setup(opts)
   M.config = vim.tbl_deep_extend('force', M.config, opts or {})
   M.register_parser()
   if M.config.conform then
     local ok, conform = pcall(require, 'conform')
     if ok then
-      conform.formatters.erde_fmt = M.formatter()
-      conform.formatters_by_ft.erde = conform.formatters_by_ft.erde or { 'erde_fmt' }
+      conform.formatters.midnight_fmt = M.formatter()
+      conform.formatters_by_ft.midnight = conform.formatters_by_ft.midnight or { 'midnight_fmt' }
     end
   end
   if M.config.lint then
     local ok, lint = pcall(require, 'lint')
     if ok then
-      lint.linters.erde = M.linter()
-      lint.linters_by_ft.erde = lint.linters_by_ft.erde or { 'erde' }
+      lint.linters.midnight = M.linter()
+      lint.linters_by_ft.midnight = lint.linters_by_ft.midnight or { 'midnight' }
     end
   end
-  if M.config.comments then require('erde.comment').setup() end
-  if M.config.rest then require('erde.rest').setup() end
+  if M.config.comments then require('midnight.comment').setup() end
+  if M.config.rest then require('midnight.rest').setup() end
 end
 
---- globals for `erde lint`: the configured ones, rest's (in rest projects),
---- and the buffer's (vim.b.erde_globals)
+--- globals for `midnight lint`: the configured ones, rest's (in rest projects),
+--- and the buffer's (vim.b.midnight_globals)
 ---@param buf? integer
 ---@return string[]
 function M.globals(buf)
   buf = buf or vim.api.nvim_get_current_buf()
   local globals = vim.deepcopy(M.config.globals)
-  if M.config.rest and require('erde.rest').in_project(buf) then
-    vim.list_extend(globals, require('erde.rest').globals)
+  if M.config.rest and require('midnight.rest').in_project(buf) then
+    vim.list_extend(globals, require('midnight.rest').globals)
   end
-  return vim.list_extend(globals, vim.b[buf].erde_globals or {})
+  return vim.list_extend(globals, vim.b[buf].midnight_globals or {})
 end
 
 --- `-X match,markup` (or nothing w/o extensions)
@@ -68,7 +68,7 @@ function M.ext_args()
   return { '-X', table.concat(M.config.extensions, ',') }
 end
 
---- nvim-treesitter (main) parser info for erde
+--- nvim-treesitter (main) parser info for midnight
 function M.parser_info()
   local ts = M.config.treesitter
   local info = { queries = 'queries' }
@@ -83,18 +83,18 @@ function M.parser_info()
   return { install_info = info }
 end
 
---- registers erde w/ nvim-treesitter, now and whenever its parser list reloads
---- (`:TSInstall erde` installs it)
+--- registers midnight w/ nvim-treesitter, now and whenever its parser list reloads
+--- (`:TSInstall midnight` installs it)
 function M.register_parser()
   if not M.config.treesitter then return end
   local ok, parsers = pcall(require, 'nvim-treesitter.parsers')
-  if ok and type(parsers) == 'table' then parsers.erde = M.parser_info() end
+  if ok and type(parsers) == 'table' then parsers.midnight = M.parser_info() end
   if M._ts_autocmd then return end
   M._ts_autocmd = vim.api.nvim_create_autocmd('User', {
     pattern = 'TSUpdate',
-    group = vim.api.nvim_create_augroup('erde.treesitter', { clear = true }),
+    group = vim.api.nvim_create_augroup('midnight.treesitter', { clear = true }),
     callback = function()
-      if M.config.treesitter then require('nvim-treesitter.parsers').erde = M.parser_info() end
+      if M.config.treesitter then require('nvim-treesitter.parsers').midnight = M.parser_info() end
     end,
   })
 end
@@ -121,7 +121,7 @@ function M.parse_lint(output)
         col = 0,
         message = message,
         code = rule,
-        source = 'erde lint',
+        source = 'midnight lint',
         severity = rule == 'syntax' and vim.diagnostic.severity.ERROR
           or vim.diagnostic.severity.WARN,
       }
@@ -147,7 +147,7 @@ function M.linter()
   end
 end
 
---- `erde -c` the buffer, ie. the lua it compiles to
+--- `midnight -c` the buffer, ie. the lua it compiles to
 ---@param buf integer
 ---@return string[]? lines, string? err
 function M.compile(buf)
@@ -162,7 +162,7 @@ end
 --- shows the compiled lua in a split, kept up to date as the buffer changes
 function M.preview(buf)
   buf = buf or vim.api.nvim_get_current_buf()
-  local preview = vim.b[buf].erde_preview
+  local preview = vim.b[buf].midnight_preview
   if preview and vim.api.nvim_buf_is_valid(preview) then
     local win = vim.fn.bufwinid(preview)
     if win ~= -1 then return vim.api.nvim_set_current_win(win) end
@@ -173,8 +173,8 @@ function M.preview(buf)
   preview = vim.api.nvim_create_buf(false, true)
   vim.bo[preview].bufhidden = 'wipe'
   vim.bo[preview].filetype = 'lua'
-  vim.api.nvim_buf_set_name(preview, 'erde://' .. vim.api.nvim_buf_get_name(buf) .. '.lua')
-  vim.b[buf].erde_preview = preview
+  vim.api.nvim_buf_set_name(preview, 'midnight://' .. vim.api.nvim_buf_get_name(buf) .. '.lua')
+  vim.b[buf].midnight_preview = preview
 
   local function update()
     local lines, err = M.compile(buf)
@@ -190,7 +190,7 @@ function M.preview(buf)
     vim.bo[preview].modifiable = false
   end
 
-  local group = vim.api.nvim_create_augroup('erde.preview.' .. buf, { clear = true })
+  local group = vim.api.nvim_create_augroup('midnight.preview.' .. buf, { clear = true })
   vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave', 'BufWritePost' }, {
     group = group,
     buffer = buf,
@@ -203,7 +203,7 @@ function M.preview(buf)
     buffer = preview,
     callback = function()
       pcall(vim.api.nvim_del_augroup_by_id, group)
-      if vim.api.nvim_buf_is_valid(buf) then vim.b[buf].erde_preview = nil end
+      if vim.api.nvim_buf_is_valid(buf) then vim.b[buf].midnight_preview = nil end
     end,
   })
 

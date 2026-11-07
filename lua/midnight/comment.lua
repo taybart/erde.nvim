@@ -1,7 +1,7 @@
 -- markup aware 'commentstring' for `gc`: markup children are commented w/
 -- `{--[[ ]]}`, everything else (code, attributes, code inside `{ ... }`) w/
--- `--`. Works in .erde buffers and erde injected in others (ex. rest's
--- `<<ERDE` heredocs).
+-- `--`. Works in .mn buffers and midnight injected in others (ex. rest's
+-- `<<MIDNIGHT` heredocs).
 local M = {}
 
 M.code = '-- %s'
@@ -41,7 +41,7 @@ function M.get()
   return M.code
 end
 
---- answers vim.filetype.get_option(<erde>, 'commentstring') (which `gc` uses
+--- answers vim.filetype.get_option(<midnight>, 'commentstring') (which `gc` uses
 --- for tree-sitter languages, incl. injected ones) w/ M.get()
 function M.setup()
   if M._get_option then return end
@@ -49,12 +49,12 @@ function M.setup()
   ---@diagnostic disable-next-line: duplicate-set-field
   vim.filetype.get_option = function(filetype, option)
     if option == 'commentstring' then
-      if filetype == 'erde' then return M.get() end
-      -- `gc` only sees the injected erde from where a heredoc's code starts,
+      if filetype == 'midnight' then return M.get() end
+      -- `gc` only sees the injected midnight from where a heredoc's code starts,
       -- so w/ the cursor in the indentation it'd use hcl's `#`
       if (filetype == 'rest' or filetype == 'hcl') and vim.bo.filetype == 'rest' then
         local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-        if require('erde.rest').in_heredoc(0, row) then return M.get() end
+        if require('midnight.rest').in_heredoc(0, row) then return M.get() end
       end
     end
     return M._get_option(filetype, option)
