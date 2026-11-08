@@ -1,7 +1,7 @@
 # midnight.nvim
 
-Neovim support for [Midnight](https://github.com/taybart/midnight) w/
-[midnight](https://github.com/taybart/midnight)'s extensions (`match`, markup):
+Neovim support for [Midnight](https://github.com/taybart/midnight) (including
+`match` and markup):
 
 - `midnight` filetype and `gf` on `require('src/layout')`
 - `gc` comments markup children w/ `{--[[ ]]}` and code w/ `--` (in .rest
@@ -51,8 +51,9 @@ make midnight.nvim a dependency of nvim-treesitter:
 ```lua
 require('midnight').setup({
   cmd = 'midnight',
-  -- passed as `-X` to fmt, lint, and compile
-  extensions = { 'match', 'markup' },
+  -- function markup elements call, passed as `-markup-factory` to lint and
+  -- compile (nil: midnight's default, `h`)
+  markup_factory = nil,
   -- extra globals for `midnight lint` (or per buffer: vim.b.midnight_globals)
   globals = {},
   treesitter = {

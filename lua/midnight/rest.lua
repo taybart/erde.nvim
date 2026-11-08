@@ -58,7 +58,7 @@ end
 function M.lint(buf)
   buf = buf or vim.api.nvim_get_current_buf()
   local midnight = require('midnight')
-  local args = vim.list_extend({ midnight.config.cmd, 'lint' }, midnight.ext_args())
+  local args = vim.list_extend({ midnight.config.cmd, 'lint' }, midnight.factory_args())
   local globals = vim.list_extend(vim.deepcopy(M.globals), midnight.config.globals)
   vim.list_extend(args, { '-g', table.concat(globals, ','), '-' })
 

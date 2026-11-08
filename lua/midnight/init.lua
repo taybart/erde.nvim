@@ -4,8 +4,9 @@ local M = {}
 M.config = {
   -- the midnight cli (`go install github.com/taybart/midnight/cmd/midnight@latest`)
   cmd = 'midnight',
-  -- experimental extensions passed as `-X` to fmt, lint, and compile
-  extensions = { 'match', 'markup' },
+  -- function markup elements call, passed as `-markup-factory` to lint and
+  -- compile (nil: midnight's default, `h`)
+  markup_factory = nil,
   -- extra globals for `midnight lint -g` (ex. ones set by the host: rest, kv, json, ...)
   -- buffers can add more w/ `vim.b.midnight_globals`
   globals = {},
@@ -61,11 +62,11 @@ function M.globals(buf)
   return vim.list_extend(globals, vim.b[buf].midnight_globals or {})
 end
 
---- `-X match,markup` (or nothing w/o extensions)
+--- `-markup-factory name` (or nothing w/o a configured factory)
 ---@return string[]
-function M.ext_args()
-  if #M.config.extensions == 0 then return {} end
-  return { '-X', table.concat(M.config.extensions, ',') }
+function M.factory_args()
+  if not M.config.markup_factory then return {} end
+  return { '-markup-factory', M.config.markup_factory }
 end
 
 --- nvim-treesitter (main) parser info for midnight
@@ -103,7 +104,7 @@ end
 function M.formatter()
   return {
     command = M.config.cmd,
-    args = function() return vim.list_extend({ 'fmt' }, vim.list_extend(M.ext_args(), { '-' })) end,
+    args = { 'fmt', '-' },
     stdin = true,
   }
 end
@@ -133,7 +134,7 @@ end
 --- nvim-lint linter (a function, so the args are built for each run)
 function M.linter()
   return function()
-    local args = vim.list_extend({ 'lint' }, M.ext_args())
+    local args = vim.list_extend({ 'lint' }, M.factory_args())
     local globals = M.globals()
     if #globals > 0 then vim.list_extend(args, { '-g', table.concat(globals, ',') }) end
     args[#args + 1] = '-'
@@ -152,7 +153,7 @@ end
 ---@return string[]? lines, string? err
 function M.compile(buf)
   local src = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n')
-  local cmd = vim.list_extend({ M.config.cmd }, M.ext_args())
+  local cmd = vim.list_extend({ M.config.cmd }, M.factory_args())
   vim.list_extend(cmd, { '-c', '-' })
   local res = vim.system(cmd, { stdin = src, text = true }):wait()
   if res.code ~= 0 then return nil, vim.trim((res.stderr or '') .. (res.stdout or '')) end
