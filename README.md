@@ -1,7 +1,7 @@
 # midnight.nvim
 
 Neovim support for [Midnight](https://github.com/taybart/midnight) (including
-`match` and markup):
+`match`, `if` / `match` expressions, and markup):
 
 - `midnight` filetype and `gf` on `require('src/layout')`
 - `gc` comments markup children w/ `{--[[ ]]}` and code w/ `--` (in .rest
@@ -10,7 +10,8 @@ Neovim support for [Midnight](https://github.com/taybart/midnight) (including
   [tree-sitter-midnight](https://github.com/taybart/tree-sitter-midnight) (css/js
   injected in `<style>` / `<script>`)
 - formatting w/ `midnight fmt` ([conform.nvim](https://github.com/stevearc/conform.nvim))
-- diagnostics w/ `midnight lint` ([nvim-lint](https://github.com/mfussenegger/nvim-lint))
+- diagnostics w/ `midnight lint` ([nvim-lint](https://github.com/mfussenegger/nvim-lint)),
+  ex. `and-or`: `a && b || c` where `b` can be nil (use `if a { b } else { c }`)
 - [rest](https://github.com/taybart/rest): lints `<<MIDNIGHT` heredocs in .rest
   files, and knows rest's globals in projects w/ a .rest file
 - `:MidnightCompile` shows the lua a buffer compiles to, updated as you edit
