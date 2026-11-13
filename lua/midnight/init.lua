@@ -20,6 +20,10 @@ M.config = {
   conform = true,
   -- register the `midnight` linter w/ nvim-lint (if it's installed)
   lint = true,
+  -- the .mn / .midnight file icon, registered w/ nvim-web-devicons (if it's
+  -- installed), where snacks, lualine, oil, ... get file icons from
+  -- (false: don't register one)
+  icon = { glyph = '󰖔', color = '#5b8fd9', cterm_color = '68' },
   -- `gc` comments markup children w/ `{--[[ ]]}` (see lua/midnight/comment.lua)
   comments = true,
   -- rest (https://github.com/taybart/rest): lint `<<MIDNIGHT` heredocs in .rest
@@ -45,6 +49,7 @@ function M.setup(opts)
       lint.linters_by_ft.midnight = lint.linters_by_ft.midnight or { 'midnight' }
     end
   end
+  M.register_icon()
   if M.config.comments then require('midnight.comment').setup() end
   if M.config.rest then require('midnight.rest').setup() end
 end
@@ -67,6 +72,23 @@ end
 function M.factory_args()
   if not M.config.markup_factory then return {} end
   return { '-markup-factory', M.config.markup_factory }
+end
+
+--- registers the midnight file icon (config.icon) w/ nvim-web-devicons, for
+--- .mn and .midnight files and the midnight filetype
+function M.register_icon()
+  local icon = M.config.icon
+  if not icon then return end
+  local ok, devicons = pcall(require, 'nvim-web-devicons')
+  if not ok then return end
+  local data = {
+    icon = icon.glyph,
+    color = icon.color,
+    cterm_color = icon.cterm_color,
+    name = 'Midnight', -- (its highlight group is DevIconMidnight)
+  }
+  devicons.set_icon({ mn = data, midnight = data })
+  devicons.set_icon_by_filetype({ midnight = 'mn' })
 end
 
 --- nvim-treesitter (main) parser info for midnight

@@ -15,6 +15,8 @@ Neovim support for [Midnight](https://github.com/taybart/midnight) (including
 - [rest](https://github.com/taybart/rest): lints `<<MIDNIGHT` heredocs in .rest
   files, and knows rest's globals in projects w/ a .rest file
 - `:MidnightCompile` shows the lua a buffer compiles to, updated as you edit
+- a file icon (󰖔) w/ [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons),
+  so pickers (ex. snacks), statuslines, and file trees show it
 
 Needs nvim 0.11+ and the `midnight` cli:
 
@@ -64,6 +66,9 @@ require('midnight').setup({
   -- register the formatter / linter if conform / nvim-lint are installed
   conform = true,
   lint = true,
+  -- the .mn / .midnight icon, registered w/ nvim-web-devicons if it's
+  -- installed (false: don't)
+  icon = { glyph = '󰖔', color = '#5b8fd9', cterm_color = '68' },
   -- markup aware commentstrings for `gc`
   comments = true,
   -- lint .rest heredocs, rest's globals in rest projects
